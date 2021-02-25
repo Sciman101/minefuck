@@ -1,8 +1,11 @@
 package info.sciman.minefuck;
 
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundTag;
-import java.util.HashMap;
-import java.util.Map;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.text.Text;
+import net.minecraft.util.math.MathHelper;
 
 public class BFSession {
 
@@ -10,46 +13,108 @@ public class BFSession {
     private static final int TAPE_LENGTH = 256;
 
     // Jump table
-    private HashMap<Integer,Integer> jumpTable = new HashMap<>();
+    private int[] jumpTable;
 
     // 'Tape' used to hold memory
-    private final byte[] tape;
+    private byte[] tape = new byte[TAPE_LENGTH];
     // Pointer
     private int ptr;
-    // Code pointer
-    private int cptr;
+    // Program counter
+    private int pc;
 
     // Actual code
-    private String code;
-    private int codeLen;
-    private boolean error; // True if there was an error building the jump table
+    private String code = "";
+    private int error = -1; // If non-negative, there is a bracket mismatch error at the specified position
+
+    // Redstone interaction
+    private int outputLevel;
+    private int inputLevel;
 
     /**
      * Default constructor
      */
     public BFSession() {
-        tape = new byte[TAPE_LENGTH];
         ptr = 0;
-        cptr = 0;
+        pc = 0;
     }
 
     /**
-     * Load BF code into the session
-     * @param code the code to load
+     * Appends data relevant to the BFSession to the tag
+     *
+     * @param tag
      */
-    public void load(String code) {
-        this.code = code;
-        this.codeLen = code.length();
-        error = false;
+    public void toTag(CompoundTag tag) {
+        tag.putByteArray("tape", tape);
+        tag.putIntArray("jumpTable", jumpTable);
+        tag.putInt("ptr", ptr);
+        tag.putInt("cptr", pc);
+        tag.putInt("output", outputLevel);
+        tag.putInt("input", inputLevel);
+        tag.putString("code", code);
+        tag.putInt("error", error);
+    }
+
+    /**
+     * Retrieves relevant data from the tag
+     *
+     * @param tag
+     */
+    public void fromTag(CompoundTag tag) {
+        tape = tag.getByteArray("tape");
+        jumpTable = tag.getIntArray("jumpTable");
+        ptr = tag.getInt("ptr");
+        pc = tag.getInt("cptr");
+        code = tag.getString("code");
+        error = tag.getInt("error");
+        outputLevel = tag.getInt("output");
+        inputLevel = tag.getInt("input");
+    }
+
+    // Check for an error in building the jump table
+    public boolean checkError() {
+        return error != -1;
+    }
+    public int getError() {
+        return error;
+    }
+    // Handle redstone interaction
+    public int getOutputLevel() {return outputLevel;}
+    public void setInputLevel(int str) {inputLevel = str;}
+
+    /**
+     * Load BF code into the session
+     * @param bookItem the book item to load code from
+     */
+    public void load(ItemStack bookItem) {
+
+        this.code = "";
+        reset();
+
+        // Get code from book
+        CompoundTag tag = bookItem.getTag();
+        boolean needParseJson = bookItem.getItem() == Items.WRITTEN_BOOK;
+        if (tag != null) {
+            ListTag listTag = tag.getList("pages",8).copy();
+            for (int i=0;i<listTag.size();i++) {
+                String page = listTag.getString(i);
+                if (needParseJson) {
+                    this.code += Text.Serializer.fromJson(page).getString();
+                }else{
+                    this.code += page;
+                }
+            }
+        }
+
+        error = -1;
 
         // Compute jump table
-        jumpTable.clear();
-        for (int i=0;i<codeLen;i++) {
+        jumpTable = new int[code.length()];
+        for (int i=0;i<code.length();i++) {
             char c = code.charAt(i);
             if (c == '[') {
                 // Find corresponding closing bracket
                 int bc = 0; // Bracket counter
-                for (int j=i;j<codeLen;j++) {
+                for (int j=i;j<code.length();j++) {
                     char c2 = code.charAt(j);
                     if (c2 == '[') {
                         bc++;
@@ -58,34 +123,32 @@ public class BFSession {
                     }
                     if (bc == 0) {
                         // Add table values and break
-                        jumpTable.put(i,j);
-                        jumpTable.put(j,i);
+                        jumpTable[i] = j;
+                        jumpTable[j] = i;
                         break;
                     }
                 }
                 if (bc != 0) {
                     // Uh oh
-                    error = true;
+                    error = i;
                     return;
                 }
             }
         }
         // Verify jump table
-        for (Map.Entry<Integer,Integer> pair : jumpTable.entrySet()) {
-            int a = pair.getKey();
-            int b = pair.getValue();
+        for (int i=0;i<code.length();i++) {
+            int a = jumpTable[i];
             // Check closing brackets
-            if (code.charAt(a) == ']') {
-                if (code.charAt(b) != '[') {
+            if (code.charAt(i) == ']') {
+                if (code.charAt(a) != '[') {
                     // Uh oh
-                    error = true;
+                    error = a;
                     return;
                 }
             }
         }
 
-
-        reset();
+        System.out.println("New code: " + code);
     }
 
     /**
@@ -93,7 +156,8 @@ public class BFSession {
      */
     public void reset() {
         ptr = 0;
-        cptr = 0;
+        pc = 0;
+        outputLevel = 0;
         // Clear tape
         for (int i=0;i<tape.length;i++) {
             tape[i] = 0;
@@ -105,20 +169,20 @@ public class BFSession {
      * @return
      */
     public boolean available() {
-        return !error && cptr < codeLen && codeLen > 0;
+        return !checkError() && (pc < code.length() && code.length() > 0);
     }
 
     /**
      * Run a single iteration and return the value currently at the pointer
      * @return
      */
-    public int advance() {
+    public int step() {
 
         if (!available()) {
             return -1;
         }
 
-        char instruction = code.charAt(cptr);
+        char instruction = code.charAt(pc);
         switch (instruction) {
 
             case '>':
@@ -138,49 +202,45 @@ public class BFSession {
                 tape[ptr]--;
                 break;
             case '.':
-                // Print character
+                // Output redstone value
+                outputLevel = MathHelper.clamp(Byte.toUnsignedInt(tape[ptr]),0,15);
                 break;
             case ',':
-                // Input character
+                // Input redstone value
+                tape[ptr] = (byte)(inputLevel & 0xFF);
                 break;
 
             case '[':
                 // Jump to next ']' if pointer value is 0
                 if (tape[ptr] == 0) {
                     // Jump
-                    cptr = jumpTable.get(cptr);
+                    pc = jumpTable[pc];
                 }
                 break;
             case ']':
                 // Jump to previous '[' if pointer is nonzero
                 if (tape[ptr] != 0) {
                     // Jump
-                    cptr = jumpTable.get(cptr);
+                    pc = jumpTable[pc];
                 }
                 break;
 
         }
         // Increment pointer
-        cptr++;
+        pc++;
 
         return tape[ptr];
     }
 
-
-    /**
-     * Appends data relevant to the BFSession to the tag
-     * @param tag
-     */
-    public void toTag(CompoundTag tag) {
-
+    public int getPC() {
+        return pc;
     }
 
-    /**
-     * Retrieves relevant data from the tag
-     * @param tag
-     */
-    public void fromTag(CompoundTag tag) {
-
+    public int getPointer() {
+        return ptr;
     }
 
+    public int getTapeValue(int pos) {
+        return Byte.toUnsignedInt(tape[pos]);
+    }
 }

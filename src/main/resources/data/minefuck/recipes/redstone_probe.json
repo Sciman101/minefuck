@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "TQT",
+    " S ",
+    " S "
+  ],
+  "key": {
+    "S": {
+      "tag": "c:stone"
+    },
+    "T": {
+      "item": "minecraft:redstone_torch"
+    },
+    "Q": {
+      "item": "minecraft:nether_quartz"
+    }
+  },
+  "result": {
+    "item": "minefuck:redstone_probe",
+    "count": 1
+  }
+}
+

@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "TLQ",
+    "SSS"
+  ],
+  "key": {
+    "S": {
+      "tag": "c:stone"
+    },
+    "L": {
+      "item": "minecraft:lectern"
+    },
+    "T": {
+      "item": "minecraft:redstone_torch"
+    },
+    "Q": {
+      "item": "minecraft:nether_quartz"
+    }
+  },
+  "result": {
+    "item": "minefuck:interpreter",
+    "count": 1
+  }
+}
+

@@ -1,14 +1,10 @@
 package info.sciman.minefuck.block;
 
 import info.sciman.minefuck.BFSession;
-import info.sciman.minefuck.ImplementedInventory;
 import info.sciman.minefuck.MinefuckMod;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.LecternBlock;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.LecternBlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.inventory.Inventories;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -20,8 +16,6 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
-import net.minecraft.util.collection.DefaultedList;
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec2f;
 import net.minecraft.util.math.Vec3d;
 import org.jetbrains.annotations.Nullable;
@@ -94,10 +88,40 @@ public class InterpreterBlockEntity extends BlockEntity {
     // The book we're sampling code from
     private ItemStack book;
 
+    // Our brainfuck session
+    private BFSession bf;
+
+    public boolean pulsed;
+
     public InterpreterBlockEntity() {
         super(MinefuckMod.INTERPRETER_BLOCK_ENTITY);
         this.book = ItemStack.EMPTY;
+        bf = new BFSession();
     }
+
+
+    // Step BF session
+    public void step() {
+        if (!world.isClient) {
+            if (bf.available()) {
+                bf.step();
+                this.markDirty();
+            }
+        }
+    }
+
+    public void setInputLevel(int str) {
+        bf.setInputLevel(str);
+    }
+
+    public int getOutputLevel() {
+        return bf.getOutputLevel();
+    }
+
+    public BFSession getBf() {
+        return bf;
+    }
+
 
     public ItemStack getBook() {
         return this.book;
@@ -113,11 +137,12 @@ public class InterpreterBlockEntity extends BlockEntity {
     }
 
     private void onBookRemoved() {
-        LecternBlock.setHasBook(this.getWorld(), this.getPos(), this.getCachedState(), false);
+        InterpreterBlock.setHasBook(this.getWorld(), this.getPos(), this.getCachedState(), false,false);
     }
 
     public void setBook(ItemStack book, @Nullable PlayerEntity player) {
         this.book = this.resolveBook(book, player);
+        this.bf.load(book);
         this.markDirty();
     }
 
@@ -150,6 +175,8 @@ public class InterpreterBlockEntity extends BlockEntity {
 
     public void fromTag(BlockState state, CompoundTag tag) {
         super.fromTag(state, tag);
+        bf.fromTag(tag);
+        tag.putBoolean("pulsed",pulsed);
         if (tag.contains("Book", 10)) {
             this.book = this.resolveBook(ItemStack.fromTag(tag.getCompound("Book")), (PlayerEntity)null);
         } else {
@@ -162,6 +189,8 @@ public class InterpreterBlockEntity extends BlockEntity {
         if (!this.getBook().isEmpty()) {
             tag.put("Book", this.getBook().toTag(new CompoundTag()));
         }
+        bf.toTag(tag);
+        pulsed = tag.getBoolean("pulsed");
         return tag;
     }
 }
