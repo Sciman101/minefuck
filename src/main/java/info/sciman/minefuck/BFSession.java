@@ -13,7 +13,7 @@ public class BFSession {
     private static final int TAPE_LENGTH = 256;
 
     // Jump table
-    private int[] jumpTable;
+    private int[] jumpTable = new int[0];
 
     // 'Tape' used to hold memory
     private byte[] tape = new byte[TAPE_LENGTH];
