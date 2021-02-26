@@ -51,15 +51,20 @@ public class RedstoneProbeItem extends Item {
             BlockPos pos = context.getBlockPos();
             BlockState state = context.getWorld().getBlockState(pos);
             ProbeBehaviour behaviour = BEHAVIORS.get(state.getBlock());
-            if (behaviour != null) {
+
+            boolean hasBehaviour = behaviour != null;
+            boolean hasComparator = state.hasComparatorOutput();
+            boolean sneaking = playerEntity.isSneaking();
+            // Show probe behaviour if it exists, and we aren't sneaking and picking a block with comparator output
+            // Show comparator output if it exists and we're sneaking, or there's no existing behaviour
+
+            if (hasBehaviour && ((hasComparator ^ sneaking) || !hasComparator)) {
                 // Get probe output
                 promptText = behaviour.getProbeInfo(world,pos,state);
-            }else {
+            }else if (hasComparator) {
                 // Is this a comparator output block?
-                if (state.hasComparatorOutput()) {
-                    int compStrength = state.getComparatorOutput(world,pos);
-                    promptText = new TranslatableText("probe.comparator_output",compStrength);
-                }
+                int compStrength = state.getComparatorOutput(world,pos);
+                promptText = new TranslatableText("probe.comparator_output",compStrength);
             }
 
             // Show message

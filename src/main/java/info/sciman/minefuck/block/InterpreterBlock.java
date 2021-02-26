@@ -68,6 +68,22 @@ public class InterpreterBlock extends HorizontalFacingBlock implements BlockEnti
         }
     }
 
+    // Comparator handling
+    @Override
+    public boolean hasComparatorOutput(BlockState state) {
+        return true;
+    }
+    @Override
+    public int getComparatorOutput(BlockState state, World world, BlockPos pos) {
+        if (state.get(HAS_BOOK)){
+            BlockEntity be = world.getBlockEntity(pos);
+            if (be instanceof InterpreterBlockEntity) {
+                return ((InterpreterBlockEntity) be).getBf().available() ? 0 : 15;
+            }
+        }
+        return 0;
+    }
+
     // Redstone handling
     public boolean emitsRedstonePower(BlockState state) {
         return true;
@@ -113,7 +129,6 @@ public class InterpreterBlock extends HorizontalFacingBlock implements BlockEnti
 
                         // Try and output to sign
                         if (didOutput) {
-                            tryAsciiOutput(world,pos,state,dir,interpreterBlockEntity);
                         }
 
                     } else {
@@ -129,60 +144,6 @@ public class InterpreterBlock extends HorizontalFacingBlock implements BlockEnti
                 interpreterBlockEntity.setInputLevel(str);
             }
         }
-    }
-
-    // Attempt to output from the interpreter as ASCII
-    private void tryAsciiOutput(World world, BlockPos pos, BlockState state, Direction dir, InterpreterBlockEntity interpreterBlockEntity) {
-        // Get block entity at position
-        BlockPos outPos = pos.offset(dir.getOpposite());
-        BlockEntity be = world.getBlockEntity(outPos);
-        // Is it a sign?
-        /*if (be instanceof SignBlockEntity) {
-            SignBlockEntity signEntity = (SignBlockEntity) be;
-
-            // Get text on sign
-            CompoundTag tag = new CompoundTag();
-            signEntity.toTag(tag);
-            String jsonText = tag.getString("Text1");
-            // Add output from interpreter
-            String rawText = Text.Serializer.fromJson(jsonText).getString() + ((char)interpreterBlockEntity.getBf().getOutputLevel());
-            // Update the sign
-            signEntity.setTextOnRow(0,new LiteralText(rawText));
-            signEntity.markDirty();
-            world.updateNeighbor(outPos,this,pos);
-
-        // Is it a lectern?
-        }else if (be instanceof LecternBlockEntity) {
-            LecternBlockEntity lecternEntity = (LecternBlockEntity) be;
-            // Check for book
-            if (lecternEntity.hasBook() && lecternEntity.getBook().getItem() == Items.WRITABLE_BOOK) {
-                // Add text to book
-                ItemStack bookItem = lecternEntity.getBook();
-                CompoundTag tag = bookItem.getTag();
-                if (tag != null) {
-
-                    int pageIndex = -1;
-                    String pageContents = "";
-
-                    // Get page contents
-                    ListTag listTag = tag.getList("pages",8).copy();
-                    for (int i=0;i<listTag.size();i++) {
-                        pageContents = listTag.getString(i);
-                        if (pageContents.length() < 255) {
-                            pageIndex = -1;
-                        }
-                    }
-
-                    // If we found a page, rewrite
-                    pageContents += ((char)interpreterBlockEntity.getBf().getOutputLevel());
-                    listTag.set(pageIndex,StringTag.of(pageContents));
-                    // Put back in book
-                    tag.put("pages",listTag);
-                    lecternEntity.markDirty();
-                }
-
-            }
-        }*/
     }
 
     // Insert or remove book
