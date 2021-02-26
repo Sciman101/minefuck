@@ -1,12 +1,12 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": [
-    "TLQ",
+    "TLC",
     "SSS"
   ],
   "key": {
     "S": {
-      "tag": "c:stone"
+      "item": "minecraft:stone"
     },
     "L": {
       "item": "minecraft:lectern"
@@ -14,8 +14,8 @@
     "T": {
       "item": "minecraft:redstone_torch"
     },
-    "Q": {
-      "item": "minecraft:nether_quartz"
+    "C": {
+      "item": "minecraft:comparator"
     }
   },
   "result": {

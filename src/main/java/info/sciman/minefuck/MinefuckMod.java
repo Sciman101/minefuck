@@ -21,7 +21,7 @@ public class MinefuckMod implements ModInitializer {
 	public static final String MODID = "minefuck";
 
 	// Blocks
-	public static final Block INTERPRETER_BLOCK = new InterpreterBlock(FabricBlockSettings.of(Material.STONE));
+	public static final Block INTERPRETER_BLOCK = new InterpreterBlock(FabricBlockSettings.of(Material.STONE).hardness(0.2f));
 	public static BlockEntityType<InterpreterBlockEntity> INTERPRETER_BLOCK_ENTITY;
 
 	// Items
@@ -39,6 +39,7 @@ public class MinefuckMod implements ModInitializer {
 		ProbeBehaviour.registerDefaults();
 	}
 
+	// Helper to register a block and it's item simultaneously
 	private void registerBlockAndItem(Identifier id, Block block, ItemGroup group) {
 		Registry.register(Registry.BLOCK, id, block);
 		Registry.register(Registry.ITEM, id, new BlockItem(block,new Item.Settings().group(group)));

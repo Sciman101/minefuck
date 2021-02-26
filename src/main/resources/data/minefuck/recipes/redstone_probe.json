@@ -3,17 +3,20 @@
   "pattern": [
     "TQT",
     " S ",
-    " S "
+    " W "
   ],
   "key": {
     "S": {
-      "tag": "c:stone"
+      "item": "minecraft:stone"
     },
     "T": {
       "item": "minecraft:redstone_torch"
     },
     "Q": {
-      "item": "minecraft:nether_quartz"
+      "item": "minecraft:quartz"
+    },
+    "W" : {
+      "tag": "minecraft:planks"
     }
   },
   "result": {

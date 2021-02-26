@@ -4,7 +4,7 @@
 	"textures": {
 		"particle": "block/comparator",
 		"slab": "block/smooth_stone",
-		"top": "minefuck:block/interpreter",
+		"top": "minefuck:block/interpreter_on",
 		"book": "minefuck:block/interpreter_book"
 	},
 	"elements": [
