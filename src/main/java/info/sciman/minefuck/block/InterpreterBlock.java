@@ -3,12 +3,17 @@ package info.sciman.minefuck.block;
 import info.sciman.minefuck.MinefuckMod;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.entity.LecternBlockEntity;
+import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemPlacementContext;
-import net.minecraft.item.ItemStack;
+import net.minecraft.item.*;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
@@ -17,7 +22,10 @@ import net.minecraft.state.property.BooleanProperty;
 import net.minecraft.state.property.Properties;
 import net.minecraft.tag.ItemTags;
 import net.minecraft.tag.Tag;
+import net.minecraft.text.LiteralText;
+import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.DyeColor;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
@@ -34,12 +42,11 @@ public class InterpreterBlock extends HorizontalFacingBlock implements BlockEnti
     protected static final VoxelShape SHAPE = Block.createCuboidShape(0.0D, 0.0D, 0.0D, 16.0D, 6.0D, 16.0D);
     public static final BooleanProperty HAS_BOOK = BooleanProperty.of("book");
     public static final BooleanProperty ERROR = BooleanProperty.of("error");
-    public static final BooleanProperty TRIGGERED;
 
 
     public InterpreterBlock(Settings settings) {
         super(settings);
-        setDefaultState(this.stateManager.getDefaultState().with(FACING, Direction.NORTH).with(HAS_BOOK,false).with(TRIGGERED,false).with(ERROR,false));
+        setDefaultState(this.stateManager.getDefaultState().with(FACING, Direction.NORTH).with(HAS_BOOK,false).with(ERROR,false));
     }
 
     public VoxelShape getOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
@@ -71,7 +78,6 @@ public class InterpreterBlock extends HorizontalFacingBlock implements BlockEnti
         if (direction == state.get(FACING)) {
             BlockEntity be = world.getBlockEntity(pos);
             if (be instanceof InterpreterBlockEntity) {
-                //System.out.println(((InterpreterBlockEntity) be).getOutputLevel());
                 return ((InterpreterBlockEntity) be).getOutputLevel();
             }
         }
@@ -97,12 +103,19 @@ public class InterpreterBlock extends HorizontalFacingBlock implements BlockEnti
                         // If we aren't powered from the bottom, step the block entity
 
                         // Step the blockentity
-                        interpreterBlockEntity.step();
+                        boolean didOutput = interpreterBlockEntity.step();
+
+                        // Update neighbor
                         Direction direction = (Direction) state.get(FACING);
                         BlockPos blockPos = pos.offset(direction.getOpposite());
                         world.updateNeighbor(blockPos, this, pos);
-                        //world.setBlockState(pos, (BlockState) ((BlockState) state.with(TRIGGERED, true)), 3);
                         interpreterBlockEntity.pulsed = true;
+
+                        // Try and output to sign
+                        if (didOutput) {
+                            tryAsciiOutput(world,pos,state,dir,interpreterBlockEntity);
+                        }
+
                     } else {
                         // Disable the TRIGGERED state
                         interpreterBlockEntity.pulsed = false;
@@ -118,32 +131,79 @@ public class InterpreterBlock extends HorizontalFacingBlock implements BlockEnti
         }
     }
 
+    // Attempt to output from the interpreter as ASCII
+    private void tryAsciiOutput(World world, BlockPos pos, BlockState state, Direction dir, InterpreterBlockEntity interpreterBlockEntity) {
+        // Get block entity at position
+        BlockPos outPos = pos.offset(dir.getOpposite());
+        BlockEntity be = world.getBlockEntity(outPos);
+        // Is it a sign?
+        /*if (be instanceof SignBlockEntity) {
+            SignBlockEntity signEntity = (SignBlockEntity) be;
+
+            // Get text on sign
+            CompoundTag tag = new CompoundTag();
+            signEntity.toTag(tag);
+            String jsonText = tag.getString("Text1");
+            // Add output from interpreter
+            String rawText = Text.Serializer.fromJson(jsonText).getString() + ((char)interpreterBlockEntity.getBf().getOutputLevel());
+            // Update the sign
+            signEntity.setTextOnRow(0,new LiteralText(rawText));
+            signEntity.markDirty();
+            world.updateNeighbor(outPos,this,pos);
+
+        // Is it a lectern?
+        }else if (be instanceof LecternBlockEntity) {
+            LecternBlockEntity lecternEntity = (LecternBlockEntity) be;
+            // Check for book
+            if (lecternEntity.hasBook() && lecternEntity.getBook().getItem() == Items.WRITABLE_BOOK) {
+                // Add text to book
+                ItemStack bookItem = lecternEntity.getBook();
+                CompoundTag tag = bookItem.getTag();
+                if (tag != null) {
+
+                    int pageIndex = -1;
+                    String pageContents = "";
+
+                    // Get page contents
+                    ListTag listTag = tag.getList("pages",8).copy();
+                    for (int i=0;i<listTag.size();i++) {
+                        pageContents = listTag.getString(i);
+                        if (pageContents.length() < 255) {
+                            pageIndex = -1;
+                        }
+                    }
+
+                    // If we found a page, rewrite
+                    pageContents += ((char)interpreterBlockEntity.getBf().getOutputLevel());
+                    listTag.set(pageIndex,StringTag.of(pageContents));
+                    // Put back in book
+                    tag.put("pages",listTag);
+                    lecternEntity.markDirty();
+                }
+
+            }
+        }*/
+    }
+
     // Insert or remove book
     @Override
     public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
-
-        ItemStack itemStack = player.getStackInHand(hand);
         // Ignore probe
+        ItemStack itemStack = player.getStackInHand(hand);
         if (itemStack.getItem() == MinefuckMod.REDSTONE_PROBE) {
             return ActionResult.PASS;
         }
-
+        // Drop our book if we have one
         if ((Boolean)state.get(HAS_BOOK)) {
             if (!world.isClient) {
                 this.dropBook(state,world,pos);
             }
             return ActionResult.success(world.isClient);
-        } else {
-            if (!itemStack.isEmpty() && itemStack.getItem().isIn((Tag) ItemTags.LECTERN_BOOKS) && !world.isClient) {
-                putBook(world,pos,state,itemStack);
-                return ActionResult.CONSUME;
-            }else {
-                return ActionResult.PASS;
-            }
         }
+        return ActionResult.PASS;
     }
 
-    // Copied from lectern
+    // Copied from lectern lol
     private static void putBook(World world, BlockPos pos, BlockState state, ItemStack book) {
         BlockEntity blockEntity = world.getBlockEntity(pos);
         if (blockEntity instanceof InterpreterBlockEntity) {
@@ -151,6 +211,16 @@ public class InterpreterBlock extends HorizontalFacingBlock implements BlockEnti
             blockEntity1.setBook(book.split(1));
             setHasBook(world, pos, state, true,blockEntity1.getBf().checkError());
             world.playSound((PlayerEntity)null, pos, SoundEvents.ITEM_BOOK_PUT, SoundCategory.BLOCKS, 1.0F, 1.0F);
+        }
+    }
+    public static boolean putBookIfAbsent(World world, BlockPos pos, BlockState state, ItemStack book) {
+        if (!(Boolean)state.get(HAS_BOOK)) {
+            if (!world.isClient) {
+                putBook(world, pos, state, book);
+            }
+            return true;
+        } else {
+            return false;
         }
     }
     public static void setHasBook(World world, BlockPos pos, BlockState state, boolean hasBook, boolean error) {
@@ -191,7 +261,6 @@ public class InterpreterBlock extends HorizontalFacingBlock implements BlockEnti
     @Override
     protected void appendProperties(StateManager.Builder<Block, BlockState> stateManager) {
         stateManager.add(FACING);
-        stateManager.add(TRIGGERED);
         stateManager.add(HAS_BOOK);
         stateManager.add(ERROR);
     }
@@ -204,9 +273,5 @@ public class InterpreterBlock extends HorizontalFacingBlock implements BlockEnti
     @Override
     public BlockEntity createBlockEntity(BlockView world) {
         return new InterpreterBlockEntity();
-    }
-
-    static {
-        TRIGGERED = Properties.TRIGGERED;
     }
 }

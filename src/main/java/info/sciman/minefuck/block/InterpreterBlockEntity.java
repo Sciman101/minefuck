@@ -101,12 +101,17 @@ public class InterpreterBlockEntity extends BlockEntity {
 
 
     // Step BF session
-    public void step() {
+    public boolean step() {
         if (!world.isClient) {
             if (bf.available()) {
-                bf.step();
+                boolean didOutput = bf.step();
                 this.markDirty();
+                return didOutput;
+            }else{
+                return false;
             }
+        }else{
+            return false;
         }
     }
 
@@ -121,7 +126,6 @@ public class InterpreterBlockEntity extends BlockEntity {
     public BFSession getBf() {
         return bf;
     }
-
 
     public ItemStack getBook() {
         return this.book;

@@ -47,7 +47,7 @@ public class BFSession {
         tag.putByteArray("tape", tape);
         tag.putIntArray("jumpTable", jumpTable);
         tag.putInt("ptr", ptr);
-        tag.putInt("cptr", pc);
+        tag.putInt("pc", pc);
         tag.putInt("output", outputLevel);
         tag.putInt("input", inputLevel);
         tag.putString("code", code);
@@ -63,7 +63,7 @@ public class BFSession {
         tape = tag.getByteArray("tape");
         jumpTable = tag.getIntArray("jumpTable");
         ptr = tag.getInt("ptr");
-        pc = tag.getInt("cptr");
+        pc = tag.getInt("pc");
         code = tag.getString("code");
         error = tag.getInt("error");
         outputLevel = tag.getInt("output");
@@ -104,7 +104,10 @@ public class BFSession {
                 }
             }
         }
+        // Strip non-BF characters
+        code = code.replaceAll("[^.,\\[\\]><+-]","");
 
+        // No error... for now
         error = -1;
 
         // Compute jump table
@@ -173,16 +176,17 @@ public class BFSession {
     }
 
     /**
-     * Run a single iteration and return the value currently at the pointer
-     * @return
+     * Run a single iteration
+     * @return True if this iteration output something
      */
-    public int step() {
+    public boolean step() {
 
         if (!available()) {
-            return -1;
+            return false;
         }
 
         char instruction = code.charAt(pc);
+        boolean didOutput = false;
         switch (instruction) {
 
             case '>':
@@ -203,7 +207,8 @@ public class BFSession {
                 break;
             case '.':
                 // Output redstone value
-                outputLevel = MathHelper.clamp(Byte.toUnsignedInt(tape[ptr]),0,15);
+                outputLevel = Byte.toUnsignedInt(tape[ptr]);
+                didOutput = true;
                 break;
             case ',':
                 // Input redstone value
@@ -229,7 +234,7 @@ public class BFSession {
         // Increment pointer
         pc++;
 
-        return tape[ptr];
+        return didOutput;
     }
 
     public int getPC() {

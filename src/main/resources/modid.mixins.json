@@ -4,6 +4,8 @@
   "package": "info.sciman.minefuck.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
+    "WrittenBookItemMixin",
+    "WritableBookItemMixin"
   ],
   "client": [
   ],
