@@ -4,17 +4,17 @@
   "version": "${version}",
 
   "name": "Minef*ck",
-  "description": "This is an example description! Tell everyone what your mod is about!",
+  "description": "Write brainfuck code in Minecraft!",
   "authors": [
-    "Me!"
+    "Sciman101"
   ],
   "contact": {
-    "homepage": "https://fabricmc.net/",
-    "sources": "https://github.com/FabricMC/fabric-example-mod"
+    "homepage": "https://modrinth.com/mod/minefck",
+    "sources": "https://github.com/Sciman101/minefuck"
   },
 
-  "license": "CC0-1.0",
-  "icon": "assets/modid/icon.png",
+  "license": "MIT",
+  "icon": "assets/minefuck/icon.png",
 
   "environment": "*",
   "entrypoints": {
