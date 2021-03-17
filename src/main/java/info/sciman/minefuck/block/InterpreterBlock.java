@@ -45,6 +45,7 @@ public class InterpreterBlock extends HorizontalFacingBlock implements BlockEnti
 
 
     public InterpreterBlock(Settings settings) {
+
         super(settings);
         setDefaultState(this.stateManager.getDefaultState().with(FACING, Direction.NORTH).with(HAS_BOOK,false).with(ERROR,false));
     }
@@ -139,7 +140,7 @@ public class InterpreterBlock extends HorizontalFacingBlock implements BlockEnti
                 }
 
                 // Update input value from the back
-                int str = world.getEmittedRedstonePower(pos.offset(dir), dir.getOpposite());
+                int str = world.getReceivedStrongRedstonePower(pos.offset(dir));
                 // Feed input to block entity
                 interpreterBlockEntity.setInputLevel(str);
             }

@@ -73,7 +73,7 @@ public class InterpreterBlockEntity extends BlockEntity {
             if (InterpreterBlockEntity.this.world.getBlockEntity(InterpreterBlockEntity.this.pos) != InterpreterBlockEntity.this) {
                 return false;
             } else {
-                return player.squaredDistanceTo((double)InterpreterBlockEntity.this.pos.getX() + 0.5D, (double)InterpreterBlockEntity.this.pos.getY() + 0.5D, (double)InterpreterBlockEntity.this.pos.getZ() + 0.5D) > 64.0D ? false : InterpreterBlockEntity.this.hasBook();
+                return !(player.squaredDistanceTo((double) InterpreterBlockEntity.this.pos.getX() + 0.5D, (double) InterpreterBlockEntity.this.pos.getY() + 0.5D, (double) InterpreterBlockEntity.this.pos.getZ() + 0.5D) > 64.0D) && InterpreterBlockEntity.this.hasBook();
             }
         }
 

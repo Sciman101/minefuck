@@ -5,7 +5,6 @@ import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.text.Text;
-import net.minecraft.util.math.MathHelper;
 
 public class BFSession {
 
@@ -150,8 +149,6 @@ public class BFSession {
                 }
             }
         }
-
-        System.out.println("New code: " + code);
     }
 
     /**
