@@ -33,6 +33,7 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldView;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Random;
@@ -114,7 +115,7 @@ public class InterpreterBlock extends HorizontalFacingBlock implements BlockEnti
             // Completely ignore any neighbor updates from in front of the interpreter. We don't accept inputs from here
             if (!pos.offset(dir.getOpposite()).equals(fromPos)) {
                 // Are we receiving power from the side?
-                if (world.isReceivingRedstonePower(pos.offset(dir.rotateYClockwise())) || world.isReceivingRedstonePower(pos.offset(dir.rotateYCounterclockwise()))) {
+                if (world.getReceivedRedstonePower(pos.offset(dir.rotateYClockwise())) > 0 || world.getReceivedRedstonePower(pos.offset(dir.rotateYCounterclockwise())) > 0) {
                     // Do we have a book?
                     if (state.get(HAS_BOOK) && !interpreterBlockEntity.pulsed) {
                         // If we aren't powered from the bottom, step the block entity
@@ -140,10 +141,23 @@ public class InterpreterBlock extends HorizontalFacingBlock implements BlockEnti
                 }
 
                 // Update input value from the back
-                int str = world.getReceivedStrongRedstonePower(pos.offset(dir));
+                int str = world.getReceivedRedstonePower(pos.offset(dir));
                 // Feed input to block entity
                 interpreterBlockEntity.setInputLevel(str);
             }
+        }
+    }
+
+    protected int getInputLevel(WorldView world, BlockPos pos, Direction dir) {
+        BlockState blockState = world.getBlockState(pos);
+        if (blockState.emitsRedstonePower()) {
+            if (blockState.isOf(Blocks.REDSTONE_BLOCK)) {
+                return 15;
+            } else {
+                return blockState.isOf(Blocks.REDSTONE_WIRE) ? (Integer)blockState.get(RedstoneWireBlock.POWER) : world.getStrongRedstonePower(pos, dir);
+            }
+        } else {
+            return 0;
         }
     }
 
