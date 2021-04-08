@@ -1,7 +1,7 @@
 package info.sciman.minefuck.mixin;
 
 import info.sciman.minefuck.MinefuckMod;
-import info.sciman.minefuck.block.InterpreterBlock;
+import info.sciman.minefuck.block.AbstractInterpreterBlock;
 import net.minecraft.block.BlockState;
 import net.minecraft.item.ItemUsageContext;
 import net.minecraft.item.WrittenBookItem;
@@ -23,7 +23,7 @@ public class WrittenBookItemMixin {
         BlockState blockState = world.getBlockState(blockPos);
 
         if (blockState.isOf(MinefuckMod.INTERPRETER_BLOCK)) {
-            ActionResult result = InterpreterBlock.putBookIfAbsent(world, blockPos, blockState, context.getStack()) ? ActionResult.success(world.isClient) : ActionResult.PASS;
+            ActionResult result = AbstractInterpreterBlock.putBookIfAbsent(world, blockPos, blockState, context.getStack()) ? ActionResult.success(world.isClient) : ActionResult.PASS;
             callback.setReturnValue(result);
         }
     }

@@ -23,8 +23,8 @@ public interface ProbeBehaviour {
             return new TranslatableText("probe.signal_power",pwr);
         });
 
-        // Brainfuck interpreter
-        RedstoneProbeItem.registerBehavior(MinefuckMod.INTERPRETER_BLOCK,(world, pos, state) -> {
+        // Define shared behaviour for regular and accelerated interpreters
+        ProbeBehaviour behaviour = (world, pos, state) -> {
             BlockEntity be = world.getBlockEntity(pos);
             if (be instanceof InterpreterBlockEntity) {
                 InterpreterBlockEntity interpreter = (InterpreterBlockEntity) be;
@@ -37,6 +37,10 @@ public interface ProbeBehaviour {
             }else{
                 return new LiteralText("???");
             }
-        });
+        };
+
+        // Brainfuck interpreter
+        RedstoneProbeItem.registerBehavior(MinefuckMod.INTERPRETER_BLOCK,behaviour);
+        RedstoneProbeItem.registerBehavior(MinefuckMod.ACCELERATED_INTERPRETER_BLOCK,behaviour);
     }
 }
