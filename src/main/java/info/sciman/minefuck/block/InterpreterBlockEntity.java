@@ -104,24 +104,9 @@ public class InterpreterBlockEntity extends BlockEntity {
     public boolean step() {
         if (!world.isClient) {
             if (bf.available()) {
-                // Check for accelerated interpreter
-                BlockState bs = getCachedState();
-                boolean didOutput;
-                // For an accelerated block, continue running until we output a signal
-                if (bs.getBlock() == MinefuckMod.ACCELERATED_INTERPRETER_BLOCK) {
-
-                    int steps = 0;
-                    do {
-                        didOutput = bf.step();
-                        steps++;
-                    }while (!didOutput && steps < 100);
-
-                }else{
-                    didOutput = bf.step();
-                }
+                boolean didOutput = bf.step();
                 this.markDirty();
                 return didOutput;
-
             }else{
                 return false;
             }
@@ -156,7 +141,7 @@ public class InterpreterBlockEntity extends BlockEntity {
     }
 
     private void onBookRemoved() {
-        AbstractInterpreterBlock.setHasBook(this.getWorld(), this.getPos(), this.getCachedState(), false,false);
+        InterpreterBlock.setHasBook(this.getWorld(), this.getPos(), this.getCachedState(), false,false);
     }
 
     public void setBook(ItemStack book, @Nullable PlayerEntity player) {

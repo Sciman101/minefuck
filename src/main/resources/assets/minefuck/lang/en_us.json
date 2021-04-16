@@ -1,7 +1,6 @@
 {
   "item.minefuck.redstone_probe": "Redstone Probe",
   "block.minefuck.interpreter": "Interpreter",
-  "block.minefuck.accelerated_interpreter": "Accelerated Interpreter",
   "probe.signal_power": "Signal Strength: %d",
   "probe.comparator_output": "Comparator Output: %d",
   "probe.interpreter_debug": "PC: %d - Ptr: %d - Tape @ Ptr: %d",

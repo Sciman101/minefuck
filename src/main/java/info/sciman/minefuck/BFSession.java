@@ -6,15 +6,13 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.text.Text;
 
-import java.util.ArrayList;
-
 public class BFSession {
 
     // Default length of program tape
     private static final int TAPE_LENGTH = 256;
 
     // Jump table
-    private int[] offsetTable = new int[0];
+    private int[] jumpTable = new int[0];
 
     // 'Tape' used to hold memory
     private byte[] tape = new byte[TAPE_LENGTH];
@@ -46,7 +44,7 @@ public class BFSession {
      */
     public void toTag(CompoundTag tag) {
         tag.putByteArray("tape", tape);
-        tag.putIntArray("jumpTable", offsetTable);
+        tag.putIntArray("jumpTable", jumpTable);
         tag.putInt("ptr", ptr);
         tag.putInt("pc", pc);
         tag.putInt("output", outputLevel);
@@ -62,7 +60,7 @@ public class BFSession {
      */
     public void fromTag(CompoundTag tag) {
         tape = tag.getByteArray("tape");
-        offsetTable = tag.getIntArray("jumpTable");
+        jumpTable = tag.getIntArray("jumpTable");
         ptr = tag.getInt("ptr");
         pc = tag.getInt("pc");
         code = tag.getString("code");
@@ -112,83 +110,23 @@ public class BFSession {
         error = -1;
 
         // Compute jump table
-        offsetTable = new int[code.length()];
-
-        // Calculate offset table
-        precalculateJumps();
-    }
-
-    /**
-     * Optimize the code loaded into the session
-     */
-    private void optimize() {
-        // Make sure we have code
-        if (this.code.length() <= 0) {
-            return;
-        }
-
-        // Replace redundant statements
-        code = code.replace("+-","")
-                .replace("-+","")
-                .replace("<>","")
-                .replace("><","");
-
-        // Replace recurring statements
-        StringBuilder newCode = new StringBuilder();
-        ArrayList<Integer> offsets = new ArrayList<>();
-        int i = 0, j;
-        // Loop over code and find
-        while (i<code.length()) {
-
-            char c = code.charAt(i);
-            // Ignore brackets and I/O
-            j = i+1;
-            if (c != '[' && c != ']' && c != '.' && c != ',') {
-                // Find matching characters
-                while (j < code.length() && code.charAt(j) == c) {
-                    j++;
-                }
-            }
-
-            // Add values
-            newCode.append(c);
-            offsets.add(j-i);
-
-            // Increment counter
-            i = j;
-        }
-
-        // New code!
-        code = newCode.toString();
-
-        offsetTable = new int[code.length()];
-        for (i=0;i<offsetTable.length;i++) {
-            offsetTable[i] = offsets.get(i);
-        }
-    }
-
-    /**
-     * Calculate the jumps for each opening and closing bracket
-     * and put that info into the offset table
-     */
-    private void precalculateJumps() {
-        // Loop over code
-        for (int i = 0; i < offsetTable.length; i++) {
+        jumpTable = new int[code.length()];
+        for (int i=0;i<code.length();i++) {
             char c = code.charAt(i);
             if (c == '[') {
                 // Find corresponding closing bracket
                 int bc = 0; // Bracket counter
-                for (int j = i; j < offsetTable.length; j++) {
+                for (int j=i;j<code.length();j++) {
                     char c2 = code.charAt(j);
                     if (c2 == '[') {
                         bc++;
-                    } else if (c2 == ']') {
+                    }else if (c2 == ']') {
                         bc--;
                     }
                     if (bc == 0) {
                         // Add table values and break
-                        offsetTable[i] = j;
-                        offsetTable[j] = i;
+                        jumpTable[i] = j;
+                        jumpTable[j] = i;
                         break;
                     }
                 }
@@ -200,8 +138,8 @@ public class BFSession {
             }
         }
         // Verify jump table
-        for (int i=0;i< offsetTable.length;i++) {
-            int a = offsetTable[i];
+        for (int i=0;i<code.length();i++) {
+            int a = jumpTable[i];
             // Check closing brackets
             if (code.charAt(i) == ']') {
                 if (code.charAt(a) != '[') {
@@ -245,29 +183,24 @@ public class BFSession {
         }
 
         char instruction = code.charAt(pc);
-        int offset = offsetTable[pc];
-        int offsetOr1 = Math.max(offset, 1);
         boolean didOutput = false;
-
         switch (instruction) {
 
             case '>':
                 // Move pointer right
-                ptr = (ptr + offsetOr1) % tape.length;
-                while (ptr >= tape.length) ptr -= tape.length;
+                if (++ptr >= tape.length) {ptr = 0;}
                 break;
             case '<':
                 // Move pointer left
-                ptr = (ptr - offsetOr1);
-                while (ptr < 0) ptr += tape.length;
+                if (--ptr < 0) {ptr = tape.length-1;}
                 break;
             case '+':
                 // Increment tape value
-                tape[ptr] += offsetOr1;
+                tape[ptr]++;
                 break;
             case '-':
                 // Decrement tape value
-                tape[ptr] -= offsetOr1;
+                tape[ptr]--;
                 break;
             case '.':
                 // Output redstone value
@@ -283,14 +216,14 @@ public class BFSession {
                 // Jump to next ']' if pointer value is 0
                 if (tape[ptr] == 0) {
                     // Jump
-                    pc = offsetTable[pc];
+                    pc = jumpTable[pc];
                 }
                 break;
             case ']':
                 // Jump to previous '[' if pointer is nonzero
                 if (tape[ptr] != 0) {
                     // Jump
-                    pc = offsetTable[pc];
+                    pc = jumpTable[pc];
                 }
                 break;
 

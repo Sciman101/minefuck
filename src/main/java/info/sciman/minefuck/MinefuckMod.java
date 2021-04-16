@@ -1,6 +1,5 @@
 package info.sciman.minefuck;
 
-import info.sciman.minefuck.block.AcceleratedInterpreterBlock;
 import info.sciman.minefuck.block.InterpreterBlock;
 import info.sciman.minefuck.block.InterpreterBlockEntity;
 import info.sciman.minefuck.item.ProbeBehaviour;
@@ -23,7 +22,6 @@ public class MinefuckMod implements ModInitializer {
 
 	// Blocks
 	public static final Block INTERPRETER_BLOCK = new InterpreterBlock(FabricBlockSettings.of(Material.STONE).hardness(0.2f));
-	public static final Block ACCELERATED_INTERPRETER_BLOCK = new AcceleratedInterpreterBlock(FabricBlockSettings.of(Material.STONE).hardness(0.2f));
 	public static BlockEntityType<InterpreterBlockEntity> INTERPRETER_BLOCK_ENTITY;
 
 	// Items
@@ -35,8 +33,6 @@ public class MinefuckMod implements ModInitializer {
 		Identifier interpreterId = id("interpreter");
 		INTERPRETER_BLOCK_ENTITY = Registry.register(Registry.BLOCK_ENTITY_TYPE,interpreterId,BlockEntityType.Builder.create(InterpreterBlockEntity::new,INTERPRETER_BLOCK).build(null));
 		registerBlockAndItem(interpreterId,INTERPRETER_BLOCK,ItemGroup.REDSTONE);
-
-		registerBlockAndItem(id("accelerated_interpreter"),ACCELERATED_INTERPRETER_BLOCK,ItemGroup.REDSTONE);
 
 		// Setup probe
 		Registry.register(Registry.ITEM,id("redstone_probe"),REDSTONE_PROBE);
