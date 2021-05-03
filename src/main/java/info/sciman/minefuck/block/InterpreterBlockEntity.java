@@ -1,11 +1,12 @@
 package info.sciman.minefuck.block;
 
 import info.sciman.minefuck.BFSession;
+import info.sciman.minefuck.SingleSlotInventory;
 import info.sciman.minefuck.MinefuckMod;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.inventory.Inventory;
+import net.minecraft.inventory.SidedInventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -16,74 +17,13 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
+import net.minecraft.util.collection.DefaultedList;
+import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec2f;
 import net.minecraft.util.math.Vec3d;
 import org.jetbrains.annotations.Nullable;
 
-public class InterpreterBlockEntity extends BlockEntity {
-    private final Inventory inventory = new Inventory() {
-        public int size() {
-            return 1;
-        }
-
-        public boolean isEmpty() {
-            return InterpreterBlockEntity.this.book.isEmpty();
-        }
-
-        public ItemStack getStack(int slot) {
-            return slot == 0 ? InterpreterBlockEntity.this.book : ItemStack.EMPTY;
-        }
-
-        public ItemStack removeStack(int slot, int amount) {
-            if (slot == 0) {
-                ItemStack itemStack = InterpreterBlockEntity.this.book.split(amount);
-                if (InterpreterBlockEntity.this.book.isEmpty()) {
-                    InterpreterBlockEntity.this.onBookRemoved();
-                }
-
-                return itemStack;
-            } else {
-                return ItemStack.EMPTY;
-            }
-        }
-
-        public ItemStack removeStack(int slot) {
-            if (slot == 0) {
-                ItemStack itemStack = InterpreterBlockEntity.this.book;
-                InterpreterBlockEntity.this.book = ItemStack.EMPTY;
-                InterpreterBlockEntity.this.onBookRemoved();
-                return itemStack;
-            } else {
-                return ItemStack.EMPTY;
-            }
-        }
-
-        public void setStack(int slot, ItemStack stack) {
-        }
-
-        public int getMaxCountPerStack() {
-            return 1;
-        }
-
-        public void markDirty() {
-            InterpreterBlockEntity.this.markDirty();
-        }
-
-        public boolean canPlayerUse(PlayerEntity player) {
-            if (InterpreterBlockEntity.this.world.getBlockEntity(InterpreterBlockEntity.this.pos) != InterpreterBlockEntity.this) {
-                return false;
-            } else {
-                return !(player.squaredDistanceTo((double) InterpreterBlockEntity.this.pos.getX() + 0.5D, (double) InterpreterBlockEntity.this.pos.getY() + 0.5D, (double) InterpreterBlockEntity.this.pos.getZ() + 0.5D) > 64.0D) && InterpreterBlockEntity.this.hasBook();
-            }
-        }
-
-        public boolean isValid(int slot, ItemStack stack) {
-            return false;
-        }
-
-        public void clear() {
-        }
-    };
+public class InterpreterBlockEntity extends BlockEntity implements SingleSlotInventory, SidedInventory {
 
     // The book we're sampling code from
     private ItemStack book;
@@ -196,5 +136,80 @@ public class InterpreterBlockEntity extends BlockEntity {
         bf.toTag(tag);
         pulsed = tag.getBoolean("pulsed");
         return tag;
+    }
+
+    @Override
+    public DefaultedList<ItemStack> getItems() {
+        return SingleSlotInventory.of(book).getItems();
+    }
+    @Override
+    public int size() {
+        return 1;
+    }
+    @Override
+    public boolean isEmpty() {
+        return InterpreterBlockEntity.this.book.isEmpty();
+    }
+    @Override
+    public ItemStack getStack(int slot) {
+        return slot == 0 ? InterpreterBlockEntity.this.book : ItemStack.EMPTY;
+    }
+    @Override
+    public ItemStack removeStack(int slot, int amount) {
+        if (slot == 0) {
+            ItemStack itemStack = InterpreterBlockEntity.this.book.split(amount);
+            if (InterpreterBlockEntity.this.book.isEmpty()) {
+                InterpreterBlockEntity.this.onBookRemoved();
+            }
+
+            return itemStack;
+        } else {
+            return ItemStack.EMPTY;
+        }
+    }
+    @Override
+    public ItemStack removeStack(int slot) {
+        if (slot == 0) {
+            ItemStack itemStack = InterpreterBlockEntity.this.book;
+            InterpreterBlockEntity.this.book = ItemStack.EMPTY;
+            InterpreterBlockEntity.this.onBookRemoved();
+            return itemStack;
+        } else {
+            return ItemStack.EMPTY;
+        }
+    }
+    @Override
+    public void setStack(int slot, ItemStack stack) {
+        if (slot == 0) {
+            setBook(stack);
+            InterpreterBlock.setHasBook(world, pos, getCachedState(), hasBook(),getBf().checkError());
+        }
+    }
+    @Override
+    public int getMaxCountPerStack() {
+        return 1;
+    }
+    @Override
+    public boolean canPlayerUse(PlayerEntity player) {
+        if (InterpreterBlockEntity.this.world.getBlockEntity(InterpreterBlockEntity.this.pos) != InterpreterBlockEntity.this) {
+            return false;
+        } else {
+            return !(player.squaredDistanceTo((double) InterpreterBlockEntity.this.pos.getX() + 0.5D, (double) InterpreterBlockEntity.this.pos.getY() + 0.5D, (double) InterpreterBlockEntity.this.pos.getZ() + 0.5D) > 64.0D) && InterpreterBlockEntity.this.hasBook();
+        }
+    }
+
+    @Override
+    public int[] getAvailableSlots(Direction side) {
+        return new int[1];
+    }
+
+    @Override
+    public boolean canInsert(int slot, ItemStack stack, @Nullable Direction dir) {
+        return stack.getItem() == Items.WRITTEN_BOOK || stack.getItem() == Items.WRITABLE_BOOK;
+    }
+
+    @Override
+    public boolean canExtract(int slot, ItemStack stack, Direction dir) {
+        return true;
     }
 }
