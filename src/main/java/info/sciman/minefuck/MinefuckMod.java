@@ -7,6 +7,7 @@ import info.sciman.minefuck.item.RedstoneProbeItem;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
 import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
+import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.minecraft.block.Block;
 import net.minecraft.block.Material;
 import net.minecraft.block.entity.BlockEntityType;
@@ -22,7 +23,7 @@ public class MinefuckMod implements ModInitializer {
 
 	// Blocks
 	public static final Block INTERPRETER_BLOCK = new InterpreterBlock(FabricBlockSettings.of(Material.STONE).hardness(0.2f));
-	public static BlockEntityType<InterpreterBlockEntity> INTERPRETER_BLOCK_ENTITY;
+	public static final BlockEntityType<InterpreterBlockEntity> INTERPRETER_BLOCK_ENTITY = FabricBlockEntityTypeBuilder.create(InterpreterBlockEntity::new, INTERPRETER_BLOCK).build(null);
 
 	// Items
 	public static final Item REDSTONE_PROBE = new RedstoneProbeItem(new FabricItemSettings().group(ItemGroup.REDSTONE).maxCount(1));
@@ -31,7 +32,7 @@ public class MinefuckMod implements ModInitializer {
 	public void onInitialize() {
 		// Setup interpreter block
 		Identifier interpreterId = id("interpreter");
-		INTERPRETER_BLOCK_ENTITY = Registry.register(Registry.BLOCK_ENTITY_TYPE,interpreterId,BlockEntityType.Builder.create(InterpreterBlockEntity::new,INTERPRETER_BLOCK).build(null));
+		Registry.register(Registry.BLOCK_ENTITY_TYPE, interpreterId, INTERPRETER_BLOCK_ENTITY);
 		registerBlockAndItem(interpreterId,INTERPRETER_BLOCK,ItemGroup.REDSTONE);
 
 		// Setup probe

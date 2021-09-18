@@ -11,9 +11,6 @@ import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.*;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
@@ -247,7 +244,7 @@ public class InterpreterBlock extends HorizontalFacingBlock implements BlockEnti
 
     @Nullable
     @Override
-    public BlockEntity createBlockEntity(BlockView world) {
-        return new InterpreterBlockEntity();
+    public BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
+        return new InterpreterBlockEntity(pos, state);
     }
 }

@@ -11,13 +11,14 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.item.WrittenBookItem;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.command.CommandOutput;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.util.collection.DefaultedList;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec2f;
 import net.minecraft.util.math.Vec3d;
@@ -33,8 +34,8 @@ public class InterpreterBlockEntity extends BlockEntity implements SingleSlotInv
 
     public boolean pulsed;
 
-    public InterpreterBlockEntity() {
-        super(MinefuckMod.INTERPRETER_BLOCK_ENTITY);
+    public InterpreterBlockEntity(BlockPos pos, BlockState state) {
+        super(MinefuckMod.INTERPRETER_BLOCK_ENTITY, pos, state);
         this.book = ItemStack.EMPTY;
         bf = new BFSession();
     }
@@ -117,21 +118,21 @@ public class InterpreterBlockEntity extends BlockEntity implements SingleSlotInv
         this.setBook(ItemStack.EMPTY);
     }
 
-    public void fromTag(BlockState state, CompoundTag tag) {
-        super.fromTag(state, tag);
+    public void readNbt(BlockState state, NbtCompound tag) {
+        super.readNbt(tag);
         bf.fromTag(tag);
         tag.putBoolean("pulsed",pulsed);
         if (tag.contains("Book", 10)) {
-            this.book = this.resolveBook(ItemStack.fromTag(tag.getCompound("Book")), (PlayerEntity)null);
+            this.book = this.resolveBook(ItemStack.fromNbt(tag.getCompound("Book")), (PlayerEntity)null);
         } else {
             this.book = ItemStack.EMPTY;
         }
     }
 
-    public CompoundTag toTag(CompoundTag tag) {
-        super.toTag(tag);
+    public NbtCompound writeNbt(NbtCompound tag) {
+        super.writeNbt(tag);
         if (!this.getBook().isEmpty()) {
-            tag.put("Book", this.getBook().toTag(new CompoundTag()));
+            tag.put("Book", this.getBook().writeNbt(new NbtCompound()));
         }
         bf.toTag(tag);
         pulsed = tag.getBoolean("pulsed");
