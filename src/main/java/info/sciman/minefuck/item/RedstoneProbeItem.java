@@ -20,6 +20,7 @@ import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class RedstoneProbeItem extends Item {
@@ -84,8 +85,6 @@ public class RedstoneProbeItem extends Item {
     }
 
     static {
-        BEHAVIORS = (Map) Util.make(new Object2ObjectOpenHashMap(), (object2ObjectOpenHashMap) -> {
-            object2ObjectOpenHashMap.defaultReturnValue(null);
-        });
+        BEHAVIORS = new HashMap<Block, ProbeBehaviour>();
     }
 }
