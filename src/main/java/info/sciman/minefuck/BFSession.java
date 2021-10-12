@@ -2,8 +2,8 @@ package info.sciman.minefuck;
 
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtList;
 import net.minecraft.text.Text;
 
 public class BFSession {
@@ -42,7 +42,7 @@ public class BFSession {
      *
      * @param tag
      */
-    public void toTag(CompoundTag tag) {
+    public void toTag(NbtCompound tag) {
         tag.putByteArray("tape", tape);
         tag.putIntArray("jumpTable", jumpTable);
         tag.putInt("ptr", ptr);
@@ -58,7 +58,7 @@ public class BFSession {
      *
      * @param tag
      */
-    public void fromTag(CompoundTag tag) {
+    public void fromTag(NbtCompound tag) {
         tape = tag.getByteArray("tape");
         jumpTable = tag.getIntArray("jumpTable");
         ptr = tag.getInt("ptr");
@@ -90,10 +90,10 @@ public class BFSession {
         reset();
 
         // Get code from book
-        CompoundTag tag = bookItem.getTag();
+        NbtCompound tag = bookItem.getNbt();
         boolean needParseJson = bookItem.getItem() == Items.WRITTEN_BOOK;
         if (tag != null) {
-            ListTag listTag = tag.getList("pages",8).copy();
+            NbtList listTag = tag.getList("pages",8).copy();
             for (int i=0;i<listTag.size();i++) {
                 String page = listTag.getString(i);
                 if (needParseJson) {
